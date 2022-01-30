@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#btnSayHello').click(function () {
+                const name = $('#txtName').val()
+
+                console.log(name);
+
+                $("#sayHelloDiv").html("Loading...")
+                $.ajax({
+                    url: "http://localhost:9000/graphql", contentType: "application/json", type: "POST", data: JSON.stringify({ query: `{sayHello(name: "${name}")}` }), success: function (result) {
+                        console.log(JSON.stringify(result));
+                        $("#sayHelloDiv").html("<h1>" + result.data.sayHello + "</h1>")
+                    }
+                })
+            })
+
+            // $("#btnGreet").click(function () {
+            //     $("#greetingDiv").html("Loading...")
+            //     $.ajax({
+            //         url: "http://localhost:9000/graphql", contentType: "application/json", type: "POST", data: JSON.stringify({ query: `{greeting}` }), success: function (result) {
+            //             console.log(JSON.stringify(result));
+            //             $("#greetingDiv").html("<h1>" + result.data.greeting + "</h1>")
+            //         }
+            //     })
+            // })
+            let loginToken = ""
+            $("#btnGreet").click(function () {
+                $.ajax({
+                    url: "http://localhost:9000/graphql", contentType: "application/json", headers: { "Authorization": "Bearer " + loginToken }, type: "POST", data: JSON.stringify({ query: `{greetingWithAuth}` }), success: function (result) {
+                        console.log(JSON.stringify(result));
+                        $("#greetingDiv").html("<h1>" + result.data.greetingWithAuth + "</h1>")
+                    },
+                    error: function(jqxhr, error) {
+                        if(jqxhr.status === 401){
+                            $("#greetingDiv").html("please authecticate first!!!").css({"color": "red", "font-weight": "bold"})
+                            return
+                        } 
+                        else if(jqxhr.status === 404){
+                            $("#greetingDiv").html("Cannot find user!!!").css({"color": "red", "font-weight": "bold"})
+                            return
+                        } 
+
+                        $("#greetingDiv").html("error").css("color", "red")
+                    }
+                })
+            })
+
+            $("#btnAuthenticate").click(function(){
+                var email = $("#txtEmail").val()
+                var password = $("#txtPassword").val()
+
+                if(email && password){
+                    $.ajax({
+                        url: "http://localhost:9000/login",
+                        contentType: "application/json",
+                        type: "POST",
+                        data: JSON.stringify({email, password}),
+                        success: function(res){
+                            loginToken = res.token
+                            $("#authStatus").html("authecticated successfully").css({"color": "green", "font-weight": "bold"})
+                            $("greetingDiv").html('').css({"color":""})
+                        },
+                        error: (xhr, err) => {
+                            alert("error: "+ xhr.statusText)
+                        }
+                    })
+                } else {
+                    alert("email and password empty")
+                }
+            })
+        })
+    </script>
+</head>
+
+<body>
+    <h1>jQuery Client</h1>
+    <hr />
+    <section>
+        <button id="btnGreet">Greet</button>
+        <br /><br />
+        <div id="greetingDiv"></div>
+    </section>
+
+    <br /><br /> <br />
+    <hr />
+
+    <section id="LoginSection">
+        <header><h2>*Login first to access greeting</h2></header>
+        <input type="text", value="miftah@salam.com" placeholder="Enter email" id="txtEmail"><br>
+        <input type="text", value="password" placeholder="Enter password" id="txtPassword"><br>
+        <input type="button" id="btnAuthenticate" value="Login">
+        <p id="authStatus"></p>
+    </section>
+</body>
+
+</html>
